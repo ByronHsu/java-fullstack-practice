@@ -1,26 +1,44 @@
 package io.github.mat3e;
 
-class Lang {
-    private final Long id;
-    private String greetingMsg;
-    private String code;
+import org.hibernate.annotations.GenericGenerator;
 
-    public Lang(Long id, String greetingMsg, String code) {
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "languages")
+class Lang {
+    @Id
+    @GeneratedValue(generator="inc")
+    @GenericGenerator(name="inc", strategy = "increment")
+    private Integer id;
+    private String welcomeMsg;
+    private String code;
+    /*
+    Hibernate (JPA) needs it
+     */
+    @SuppressWarnings("unused")
+    Lang() {
+    }
+
+    public Lang(Integer id, String welcomeMsg, String code) {
         this.id = id;
-        this.greetingMsg = greetingMsg;
+        this.welcomeMsg = welcomeMsg;
         this.code = code;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public String getGreetingMsg() {
-        return greetingMsg;
+    public String getWelcomeMsg() {
+        return welcomeMsg;
     }
 
-    public void setGreetingMsg(String greetingMsg) {
-        this.greetingMsg = greetingMsg;
+    public void setWelcomeMsg(String welcomeMsg) {
+        this.welcomeMsg = welcomeMsg;
     }
 
     public String getCode() {
