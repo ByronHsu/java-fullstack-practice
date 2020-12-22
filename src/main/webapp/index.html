@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ULTIMATE TODO LIST</title>
+    <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/pure-min.css">
+</head>
+<body>
+<form id="welcomeForm" class="pure-form" style="width: 40%; margin: 0 auto">
+    <input type="text" class="pure-input-rounded" name="name" placeholder="name">
+    <fieldset id="langs"></fieldset>
+    <button id="btn" class="pure-button pure-button-primary">Submit</button>
+</form>
+<div id="welcome" style="width: 40%; margin: 0 auto"> </div>
+</body>
+<script>
+    const API_URL = 'http://localhost:8080/api';
+    const CODE_TO_EMOJI = {
+        'pl': '🇵🇱',
+        'en': '🇺🇸',
+        'de': '🇩🇪'
+    }
+
+    fetch(`${API_URL}/langs`)
+        .then(res => res.json())
+        .then(langArr => {
+            const checkboxes = langArr.map((lang) => `
+            <label class="pure-radio">
+                <input type="radio" name="lang" value="${lang.id}">
+                ${CODE_TO_EMOJI[lang.code]}
+            </label>
+            `).join('\n');
+            document.getElementById('langs').innerHTML = checkboxes;
+        });
+
+    const div = document.getElementById('welcome');
+    const form = document.getElementById('welcomeForm');
+    document.getElementById('btn').addEventListener('click', (event) => {
+        event.preventDefault();
+        const formObj = {
+            name: form.elements.name.value,
+            lang: form.elements.lang.value
+        };
+
+        fetch(API_URL + '?' + new URLSearchParams(formObj))
+            .then((response) => response.text())
+            .then((txt) => {
+                div.innerHTML = `
+                    <h1>${txt}</h1>
+                `;
+            })
+    });
+</script>
+</html>
