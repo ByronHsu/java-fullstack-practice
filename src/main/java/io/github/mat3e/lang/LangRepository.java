@@ -9,13 +9,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class LangRepository {
-    private final List<Lang> languages;
-
-    public LangRepository() {
-        languages = new ArrayList<>();
-        languages.add(new Lang(1, "Hello", "en"));
-        languages.add(new Lang(2, "Siemanko", "pl"));
-    }
 
     public Optional<Lang> findById(Integer id) {
         var session = HibernateUtil.getSessionFactory().openSession();

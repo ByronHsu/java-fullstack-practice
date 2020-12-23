@@ -26,7 +26,7 @@ public class LangServlet extends HttpServlet {
         this(new LangService(), new ObjectMapper());
     }
 
-    LangServlet(LangService service, ObjectMapper mapper){
+    LangServlet(LangService service, ObjectMapper mapper) {
         this.service = service;
         this.mapper = mapper;
     }

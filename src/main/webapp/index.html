@@ -3,52 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <title>ULTIMATE TODO LIST</title>
-    <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/pure-min.css">
+    <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css"
+          integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
 </head>
 <body>
-<form id="welcomeForm" class="pure-form" style="width: 40%; margin: 0 auto">
-    <input type="text" class="pure-input-rounded" name="name" placeholder="name">
-    <fieldset id="langs"></fieldset>
-    <button id="btn" class="pure-button pure-button-primary">Submit</button>
-</form>
-<div id="welcome" style="width: 40%; margin: 0 auto"> </div>
-</body>
+<main style="width: 40%; margin: 0 auto">
+    <div id="welcome" style="text-align: center">
+        <h1>Introduce yourself</h1>
+    </div>
+    <form id="welcomeForm" class="pure-form pure-g pure-form-aligned">
+        <input class="pure-input-rounded pure-u-1" name="name" placeholder="name">
+        <fieldset id="langs" class="pure-u-1 pure-control-group">Loading...</fieldset>
+        <button id="btn" class="pure-button pure-button-primary pure-u-1">Submit</button>
+    </form>
+    <form id="todoForm" class="pure-form" style="display: none; text-align: center">
+        <fieldset>
+            <input id="todoText" class="pure-input-rounded pure-input-2-3" placeholder="new TODO">
+            <button id="addTodo" class="pure-button pure-button-primary">+</button>
+        </fieldset>
+        <fieldset id="allTodos"></fieldset>
+    </form>
+</main>
 <script>
-    const API_URL = 'http://localhost:8080/api';
-    const CODE_TO_EMOJI = {
-        'pl': '🇵🇱',
-        'en': '🇺🇸',
-        'de': '🇩🇪'
-    }
+    (function() {
+        const API_URL = 'http://localhost:8080/api';
+        const TODO_API_URL = `${API_URL}/todos`;
 
-    fetch(`${API_URL}/langs`)
-        .then(res => res.json())
-        .then(langArr => {
-            const checkboxes = langArr.map((lang) => `
-            <label class="pure-radio">
-                <input type="radio" name="lang" value="${lang.id}">
-                ${CODE_TO_EMOJI[lang.code]}
-            </label>
-            `).join('\n');
-            document.getElementById('langs').innerHTML = checkboxes;
+        const todoText = document.getElementById('todoText');
+
+        fetch(TODO_API_URL)
+            .then(processOkResponse)
+            .then(todos => todos.forEach(createNewTodo));
+
+        document.getElementById('addTodo').addEventListener('click', (event) => {
+            event.preventDefault();
+            fetch(TODO_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: todoText.value })
+            })
+                .then(processOkResponse)
+                .then(createNewTodo)
+                .then(() => todoText.value = '')
+                .catch(console.warn);
         });
 
-    const div = document.getElementById('welcome');
-    const form = document.getElementById('welcomeForm');
-    document.getElementById('btn').addEventListener('click', (event) => {
-        event.preventDefault();
-        const formObj = {
-            name: form.elements.name.value,
-            lang: form.elements.lang.value
-        };
+        function createNewTodo(todo) {
+            const label = document.createElement('label');
+            label.classList.add('pure-checkbox');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = todo.done;
+            checkbox.addEventListener('click',
+                (event) => {
+                    event.preventDefault();
+                    fetch(`${TODO_API_URL}/${todo.id}`, { method: 'PUT' })
+                        .then(processOkResponse)
+                        .then(updatedTodo => checkbox.checked = !!updatedTodo.done)
+                        .catch(console.warn);
+                });
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(` ${todo.text}`));
+            document.getElementById('allTodos').appendChild(label);
+        }
 
-        fetch(API_URL + '?' + new URLSearchParams(formObj))
-            .then((response) => response.text())
-            .then((txt) => {
-                div.innerHTML = `
-                    <h1>${txt}</h1>
-                `;
-            })
-    });
+        initWelcomeForm();
+
+        function initWelcomeForm() {
+            const CODE_TO_EMOJI = {
+                'pl': '🇵🇱',
+                'en': '🇺🇸',
+                'de': '🇩🇪'
+            };
+            fetch(`${API_URL}/langs`)
+                .then(processOkResponse)
+                .then(langArr => {
+                    document.getElementById('langs').innerHTML = langArr.map(lang => `
+                          <label class="pure-radio">
+                            <input type="radio" name="lang" value="${lang.id}">
+                            ${CODE_TO_EMOJI[lang.code]}
+                          </label>
+                      `).join('\n');
+                    initWelcomeFormClick();
+                });
+        }
+
+        function initWelcomeFormClick() {
+            const welcomeForm = document.getElementById('welcomeForm');
+
+            document.getElementById('btn').addEventListener('click', (event) => {
+                event.preventDefault();
+                const formObj = {
+                    name: welcomeForm.elements.name.value,
+                    lang: welcomeForm.elements.lang.value
+                };
+                fetch(`${API_URL}?${new URLSearchParams(formObj)}`)
+                    .then(response => response.text())
+                    .then((text) => {
+                        document.getElementById('welcome').innerHTML = `
+                            <h1>${text}</h1>
+                        `;
+                        welcomeForm.remove();
+                        document.getElementById('todoForm').style.display = 'block';
+                    });
+            });
+        }
+
+        function processOkResponse(response = {}) {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error(`Status not 200 (${response.status})`);
+        }
+    })();
 </script>
+</body>
 </html>
